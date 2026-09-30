@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bell, PiggyBank, TrendingUp, Home as HomeIcon, GraduationCap, Users, Brain, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { getDashboardStats, PROGRAM_LENGTH_DAYS } from "@/lib/stats";
 import { getLevelInfo } from "@/lib/gamification";
 import { RobotMascot } from "@/components/RobotMascot";
@@ -16,28 +17,24 @@ function greeting(hour: number) {
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user!;
+  const user = (await getCurrentUser())!;
 
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, stats, { data: recentResponses }] = await Promise.all([
+    supabase.from("user_profiles").select("name").eq("id", user.id).maybeSingle(),
+    getDashboardStats(supabase, user.id),
+    supabase
+      .from("survey_responses")
+      .select("day_number, confidence_level")
+      .eq("user_id", user.id)
+      .order("day_number", { ascending: true })
+      .limit(30),
+  ]);
 
   const firstName = (profile?.name ?? user.user_metadata?.name ?? "there").split(
     " ",
   )[0];
 
-  const stats = await getDashboardStats(supabase, user.id);
   const level = getLevelInfo(stats.totalPoints);
-
-  const { data: recentResponses } = await supabase
-    .from("survey_responses")
-    .select("day_number, confidence_level")
-    .eq("user_id", user.id)
-    .order("day_number", { ascending: true })
-    .limit(30);
 
   const rows = recentResponses ?? [];
   const last7 = rows.slice(-7);

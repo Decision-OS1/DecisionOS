@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { getDashboardStats, PROGRAM_LENGTH_DAYS } from "@/lib/stats";
 import { getScenarioForDay } from "@/lib/scenarios";
 import { DecisionForm } from "@/components/decision/DecisionForm";
@@ -8,17 +9,17 @@ export default async function DecisionPage({
   searchParams,
 }: PageProps<"/decision">) {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user!;
+  const user = (await getCurrentUser())!;
 
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("name, age_group")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const stats = await getDashboardStats(supabase, user.id);
-  const params = await searchParams;
+  const [{ data: profile }, stats, params] = await Promise.all([
+    supabase
+      .from("user_profiles")
+      .select("name, age_group")
+      .eq("id", user.id)
+      .maybeSingle(),
+    getDashboardStats(supabase, user.id),
+    searchParams,
+  ]);
   const error = typeof params.error === "string" ? params.error : null;
 
   if (stats.decisionsMade >= PROGRAM_LENGTH_DAYS) {

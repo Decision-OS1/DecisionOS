@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Sparkles, TrendingUp, Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { toDateKey } from "@/lib/date";
 import { StatCard } from "@/components/StatCard";
 import { ScoreLineChart } from "@/components/charts/ScoreLineChart";
@@ -28,8 +29,7 @@ function average(nums: number[]) {
 
 export default async function ProgressPage() {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user!;
+  const user = (await getCurrentUser())!;
 
   const { data: rows } = await supabase
     .from("survey_responses")

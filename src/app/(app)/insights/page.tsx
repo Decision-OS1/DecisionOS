@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 
 const CONFIDENCE_SCORE: Record<string, number> = {
   "Very confident": 100,
@@ -14,8 +15,7 @@ function average(nums: number[]) {
 
 export default async function InsightsPage() {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user!;
+  const user = (await getCurrentUser())!;
 
   const [{ data: responses }, { data: survey }] = await Promise.all([
     supabase

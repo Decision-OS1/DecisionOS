@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { PROGRAM_LENGTH_DAYS } from "@/lib/stats";
 import { FeedbackView } from "@/components/decision/FeedbackView";
 
@@ -10,8 +11,7 @@ export default async function FeedbackPage({
   const dayNumber = Number(params.day ?? 0);
 
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user!;
+  const user = (await getCurrentUser())!;
 
   const { data: response } = await supabase
     .from("survey_responses")

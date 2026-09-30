@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { logout } from "@/app/(auth)/actions";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user!;
+  const user = (await getCurrentUser())!;
 
   const { data: profile } = await supabase
     .from("user_profiles")
